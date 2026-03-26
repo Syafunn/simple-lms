@@ -24,16 +24,20 @@ Project ini dibuat untuk memahami containerization dan integrasi backend modern.
 ## 📁 Struktur Project
 
 ```
-simple-lms/
-├── docker-compose.yml
-├── Dockerfile
-├── .env.example
-├── requirements.txt
-├── manage.py
-├── config/
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
+simple-lms/ 
+├── config/ 
+│ ├── __init__.py 
+│ ├── asgi.py 
+│ ├── settings.py 
+│ ├── urls.py 
+│ └── wsgi.py 
+├── .env 
+├── .env.example 
+├── .gitignore 
+├── docker-compose.yml 
+├── Dockerfile 
+├── manage.py 
+├── requirements.txt 
 └── README.md
 ```
 
@@ -44,7 +48,7 @@ simple-lms/
 ### 1. Clone Repository
 
 ```
-git clone https://github.com/USERNAME/simple-lms.git
+git clone https://github.com/Syafunn/simple-lms.git
 cd simple-lms
 ```
 
