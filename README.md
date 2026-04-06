@@ -12,7 +12,7 @@ Query optimization menggunakan Django ORM
 Django Admin interface
  Cara Menjalankan Project
 1. Clone Repository
-git clone https://github.com/Syafunun/simple-lms.git
+git clone https://github.com/Syafunn/simple-lms.git
 cd simple-lms
 2. Setup Environment
 
