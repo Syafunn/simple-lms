@@ -1,125 +1,131 @@
-# Simple LMS (Django + Docker)
+Simple LMS - Django + Docker
+ Deskripsi
 
-## 📌 Deskripsi
+Project ini merupakan implementasi Simple Learning Management System (LMS) menggunakan Django, PostgreSQL, dan Docker.
 
-Project ini adalah setup environment development untuk aplikasi **Simple LMS** menggunakan:
+Project ini mencakup:
 
-* Django
-* Docker
-* PostgreSQL
-
-Project ini dibuat untuk memahami containerization dan integrasi backend modern.
-
----
-
-## 🛠️ Teknologi
-
-* Python 3.11
-* Django
-* PostgreSQL
-* Docker & Docker Compose
-
----
-
-## 📁 Struktur Project
-
-```
-simple-lms/ 
-├── config/ 
-│ ├── __init__.py 
-│ ├── asgi.py 
-│ ├── settings.py 
-│ ├── urls.py 
-│ └── wsgi.py 
-├── .env 
-├── .env.example 
-├── .gitignore 
-├── docker-compose.yml 
-├── Dockerfile 
-├── manage.py 
-├── requirements.txt 
-└── README.md
-```
-
----
-
-## ⚙️ Cara Menjalankan Project
-
-### 1. Clone Repository
-
-```
+Setup environment menggunakan Docker
+Konfigurasi Django dengan PostgreSQL
+Implementasi data model LMS
+Query optimization menggunakan Django ORM
+Django Admin interface
+ Cara Menjalankan Project
+1. Clone Repository
 git clone https://github.com/Syafunn/simple-lms.git
 cd simple-lms
-```
+2. Setup Environment
 
-### 2. Copy Environment File
+Copy file environment:
 
-```
 cp .env.example .env
-```
-
-### 3. Build & Run Docker
-
-```
+3. Jalankan Docker
 docker compose up --build
-```
-
-### 4. Jalankan Migration
-
-```
+4. Jalankan Migration
 docker compose exec web python manage.py migrate
-```
+5. Buat Superuser
+docker compose exec web python manage.py createsuperuser
+6. Akses Aplikasi
+Django: http://localhost:8000
+Admin: http://localhost:8000/admin
+ Environment Variables
+DEBUG=1
+POSTGRES_DB=lms_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+ Docker Services
+Web (Django)
+Menjalankan aplikasi Django
+Port: 8000
+Database (PostgreSQL)
+Database utama aplikasi
+Port: 5432
+ Data Models
+1. User
+Custom user menggunakan AbstractUser
+Role:
+Admin
+Instructor
+Student
+2. Category
+Mendukung hierarchical category (parent-child)
+3. Course
+Relasi ke Instructor dan Category
+4. Lesson
+Relasi ke Course
+Memiliki urutan (ordering)
+5. Enrollment
+Relasi Student dan Course
+Unique constraint
+6. Progress
+Tracking penyelesaian lesson
+ Query Optimization
+ Tanpa Optimization
+Course.objects.all()
+ Dengan Optimization
+Course.objects.for_listing()
 
-### 5. Akses Aplikasi
+Menggunakan:
 
-Buka browser:
+select_related()
+prefetch_related()
 
-```
-http://localhost:8000
-```
+Untuk menghindari N+1 Query Problem dan meningkatkan performa.
 
----
-
-## 🔐 Environment Variables
-
-| Variable    | Deskripsi          |
-| ----------- | ------------------ |
-| DEBUG       | Mode debug Django  |
-| DB_NAME     | Nama database      |
-| DB_USER     | User PostgreSQL    |
-| DB_PASSWORD | Password database  |
-| DB_HOST     | Host database (db) |
-| DB_PORT     | Port database      |
-
----
-
-## 🐳 Services (Docker Compose)
-
-### 1. Web (Django)
-
-* Port: 8000
-* Menjalankan aplikasi Django
-
-### 2. Database (PostgreSQL)
-
-* Port: 5432
-* Menyimpan data aplikasi
-
----
-
-## 📸 Screenshot
+##  Screenshot
 
 ### Django Welcome Page
 
 <img width="2560" height="1504" alt="Screenshot 2026-03-26 203502" src="https://github.com/user-attachments/assets/e35672c6-e59f-42fe-86f6-fc0f50f0191b" />
 
+Query Optimization Demo
+
+
+Tanpa Optimization
+<img width="725" height="175" alt="Screenshot 2026-04-06 235900" src="https://github.com/user-attachments/assets/de20b319-b7d1-404f-b73e-81a6f9a0afac" />
+
+
+Dengan Optimization
+<img width="760" height="169" alt="Screenshot 2026-04-06 235911" src="https://github.com/user-attachments/assets/60cce8c4-ca50-42df-b6b9-7ef058193552" />
+
 ---
 
-## ✅ Fitur yang Berjalan
+Contoh Query
+courses = Course.objects.for_listing()
 
-* Docker Compose berhasil running
-* Django dapat diakses di localhost:8000
-* PostgreSQL terkoneksi
-* Environment variables digunakan
-* Struktur project sesuai best practice
+for c in courses:
+    print(c.title, c.instructor.username)
+ Django Admin
 
+Fitur:
+
+List display informatif
+Search functionality
+Filter data
+Inline Lesson pada Course
+ Fixtures
+
+File data awal:
+
+lms_fixture.json
+
+Digunakan untuk mengisi database dengan data awal.
+
+ Project Structure
+simple-lms/
+├── docker-compose.yml
+├── Dockerfile
+├── .env.example
+├── requirements.txt
+├── manage.py
+├── config/
+├── lms/
+├── screenshots/
+└── README.md
+
+ Tech Stack
+Django
+PostgreSQL
+Docker
