@@ -4,7 +4,11 @@ from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.hashers import make_password
 from jose import jwt
 from datetime import datetime, timedelta
+from django.core.cache import cache
+from .mongodb import activity_logs
+from .analytics import save_progress
 from ninja.security import HttpBearer
+from .tasks import send_enrollment_email
 
 from .models import Course, Category, Enrollment, Progress
 
@@ -120,8 +124,17 @@ def update_me(request, data: dict):
 # =========================
 @api.get("/courses")
 def list_courses(request):
-    courses = Course.objects.all()
-    return [
+
+    cached_courses = cache.get("course_list")
+
+    if cached_courses:
+        return cached_courses
+
+    courses = Course.objects.select_related(
+        "instructor"
+    )
+
+    result = [
         {
             "id": c.id,
             "title": c.title,
@@ -130,16 +143,54 @@ def list_courses(request):
         for c in courses
     ]
 
+    cache.set(
+        "course_list",
+        result,
+        timeout=300
+    )
+
+    return result
+
 
 @api.get("/courses/{course_id}")
 def course_detail(request, course_id: int):
-    c = Course.objects.get(id=course_id)
-    return {
+
+    cache_key = f"course_{course_id}"
+
+    cached_course = cache.get(cache_key)
+
+    if cached_course:
+
+        activity_logs.insert_one({
+            "course_id": course_id,
+            "action": "view_course_cache"
+        })
+
+        return cached_course
+
+    c = Course.objects.select_related(
+        "instructor"
+    ).get(id=course_id)
+
+    result = {
         "id": c.id,
         "title": c.title,
         "description": c.description,
         "instructor": c.instructor.username
     }
+
+    cache.set(
+        cache_key,
+        result,
+        timeout=300
+    )
+
+    activity_logs.insert_one({
+        "course_id": course_id,
+        "action": "view_course_db"
+    })
+
+    return result
 
 
 # =========================
@@ -161,6 +212,7 @@ def create_course(request, data: CourseSchema):
         instructor=instructor,
         category=category
     )
+    cache.delete("course_list")
 
     return {"message": "Course created", "id": course.id}
 
@@ -176,6 +228,9 @@ def update_course(request, id: int, data: CourseSchema):
     course.title = data.title
     course.description = data.description
     course.save()
+    
+    cache.delete("course_list")
+    cache.delete(f"course_{id}")
 
     return {"message": "Updated"}
 
@@ -188,6 +243,10 @@ def delete_course(request, id: int):
         return {"error": "Admin only"}
 
     Course.objects.filter(id=id).delete()
+    
+    cache.delete("course_list")
+    cache.delete(f"course_{id}")
+    
     return {"message": "Deleted"}
 
 
@@ -196,6 +255,7 @@ def delete_course(request, id: int):
 # =========================
 @api.post("/enrollments", auth=AuthBearer())
 def enroll(request, course_id: int):
+
     user = request.auth
 
     if not is_student(user):
@@ -205,6 +265,18 @@ def enroll(request, course_id: int):
         student_id=user["user_id"],
         course_id=course_id
     )
+    
+    send_enrollment_email.delay(
+    user["user_id"],
+    course_id
+    )
+
+    activity_logs.insert_one({
+        "user_id": user["user_id"],
+        "course_id": course_id,
+        "action": "enroll_course",
+        "timestamp": datetime.utcnow()
+    })
 
     return {"message": "Enrolled"}
 
@@ -229,12 +301,18 @@ def my_courses(request):
 # =========================
 @api.post("/enrollments/{id}/progress", auth=AuthBearer())
 def mark_progress(request, id: int, lesson_id: int):
+
     user = request.auth
 
     Progress.objects.update_or_create(
         student_id=user["user_id"],
         lesson_id=lesson_id,
         defaults={"completed": True}
+    )
+
+    save_progress(
+        user["user_id"],
+        lesson_id
     )
 
     return {"message": "Progress updated"}

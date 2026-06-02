@@ -22,7 +22,6 @@ from lms.api import api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('silk/', include('silk.urls', namespace='silk')),
     
     path('lab/course-list/baseline/', views.course_list_baseline),
     path('lab/course-list/optimized/', views.course_list_optimized),

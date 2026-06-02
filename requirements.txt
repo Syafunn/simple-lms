@@ -1,3 +1,11 @@
 Django>=4.2
 psycopg2-binary
 python-dotenv
+redis
+django-redis
+pymongo
+celery
+django-ratelimit
+flower
+django-ninja
+python-jose
