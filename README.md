@@ -196,6 +196,43 @@ simple-lms/
 
 ---
 
+## Additional Features
+
+### Redis Caching
+
+Implementasi Redis caching untuk:
+
+- Course List API
+- Course Detail API
+- Weather API Simulation
+
+Cache timeout: 300 seconds (5 minutes)
+
+Kenapa response time berbeda?
+-Karena pada pemanggilan pertama aplikasi mengambil data dari API yang memiliki delay 2 detik.
+-Pada pemanggilan kedua data sudah tersimpan di Redis sehingga tidak perlu memanggil API lagi.
+
+Apa keuntungan caching?
+-Mempercepat response time
+-Mengurangi beban server
+-Mengurangi jumlah API call
+-Meningkatkan performa aplikasi
+
+Kapan sebaiknya tidak menggunakan cache?
+-Data sering berubah
+-Membutuhkan data real-time
+-Data sensitif yang tidak boleh disimpan lama
+
+screenshot:
+Redis terinstall dan jalan	
+<img width="1464" height="662" alt="Screenshot 2026-06-08 142043" src="https://github.com/user-attachments/assets/4c610b40-9730-4d54-beb8-efd0cecd911d" />
+
+Caching logic benar	
+<img width="1392" height="172" alt="Screenshot 2026-06-08 134929" src="https://github.com/user-attachments/assets/99a5abfc-a248-4646-bcc1-2d5499d9d0a1" />
+
+Testing menunjukkan improvement
+<img width="910" height="228" alt="Screenshot 2026-06-08 134752" src="https://github.com/user-attachments/assets/0c3c5cb8-1a4e-4e3c-97f1-3c09bb8eb02d" />
+
 ## ✅ Kesimpulan
 
 API LMS berhasil dibangun dengan:
