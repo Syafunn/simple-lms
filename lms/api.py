@@ -8,7 +8,8 @@ from django.core.cache import cache
 from .mongodb import activity_logs
 from .analytics import save_progress
 from ninja.security import HttpBearer
-from .tasks import send_enrollment_email
+from celery.result import AsyncResult  # <-- TAMBAHAN IMPORT UNTUK CEK STATUS CELERY
+from .tasks import send_enrollment_email, export_course_report  # <-- TAMBAHAN IMPORT TASK REPORT
 
 from .models import Course, Category, Enrollment, Progress
 
@@ -267,8 +268,8 @@ def enroll(request, course_id: int):
     )
     
     send_enrollment_email.delay(
-    user["user_id"],
-    course_id
+        user["user_id"],
+        course_id
     )
 
     activity_logs.insert_one({
@@ -332,3 +333,50 @@ def get_progress(request):
         }
         for p in progress
     ]
+
+
+# =========================
+# ASYNC TASKS (REPORTING) - BARU DITAMBAHKAN
+# =========================
+@api.post("/reports/generate", tags=["Async Tasks"], auth=AuthBearer())
+def generate_report_api(request):
+    """
+    Endpoint untuk memicu proses generate report CSV di background.
+    Hanya Admin atau Instructor yang bisa melakukan ini (opsional bisa disesuaikan).
+    """
+    user = request.auth
+    
+    # Opsional: Validasi agar hanya admin/instructor yang bisa generate report
+    if not (is_admin(user) or is_instructor(user)):
+        return {"error": "Only Admin or Instructor can generate reports."}
+        
+    # Memanggil task celery secara asinkron menggunakan .delay()
+    task = export_course_report.delay()
+    
+    # Mengembalikan task_id agar klien bisa mengecek statusnya
+    return {
+        "message": "Task pembuatan report sedang diproses di background", 
+        "task_id": str(task.id)
+    }
+
+
+@api.get("/reports/status/{task_id}", tags=["Async Tasks"], auth=AuthBearer())
+def check_task_status(request, task_id: str):
+    """
+    Endpoint untuk mengecek apakah proses generate report sudah selesai atau belum.
+    """
+    # Mengambil objek task celery berdasarkan ID
+    task_result = AsyncResult(task_id)
+    
+    response = {
+        "task_id": task_id,
+        "status": task_result.state, # Status bisa: PENDING, STARTED, SUCCESS, FAILURE
+    }
+    
+    # Jika sukses, tampilkan juga hasil return dari tasks.py (path file)
+    if task_result.state == "SUCCESS":
+        response["result"] = task_result.result  
+    elif task_result.state == "FAILURE":
+        response["error"] = str(task_result.info)
+        
+    return response
