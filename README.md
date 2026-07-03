@@ -1,245 +1,186 @@
-#  Simple LMS API (Django Ninja + JWT + RBAC)
+# Simple LMS Extended API (Django Ninja + JWT + RBAC + Celery Async)
 
-##  Deskripsi
+## Deskripsi
 
-Project ini merupakan implementasi **Simple Learning Management System (LMS)** berbasis **REST API** menggunakan:
+Project ini merupakan pengembangan lanjutan dari Simple Learning Management System (LMS) berbasis REST API menggunakan:
+- Django + Django Ninja
+- PostgreSQL
+- Docker
+- JWT Authentication
+- Role-Based Access Control (RBAC)
+- Celery + RabbitMQ (Asynchronous Task Queue)
+- Redis (Cache & Result Backend)
 
-* Django + Django Ninja
-* PostgreSQL
-* Docker
-* JWT Authentication
-* Role-Based Access Control (RBAC)
+API ini memungkinkan manajemen user (Admin, Instructor, Student), pengelolaan kelas, pendaftaran kursus, tracking progres belajar, hingga pemrosesan tugas berat secara asinkron di latar belakang agar server tidak lemot.
 
-API ini memungkinkan:
+## Fitur Utama
 
-* Manajemen user (Admin, Instructor, Student)
-* Manajemen course
-* Enrollment student ke course
-* Tracking progress pembelajaran
+### Authentication (JWT)
+- Register user secara dinamis menentukan role
+- Login untuk generate token akses
+- Get dan update data profil user
 
----
+### Courses
+- List semua kelas (terbuka untuk publik)
+- Detail info kelas spesifik
+- Create kelas baru (Khusus Instructor)
+- Update data kelas (Khusus Owner kelas)
+- Delete kelas dari sistem (Khusus Admin)
 
-##  Fitur Utama
+### Enrollment
+- Daftar ke kelas pilihan (Khusus Student)
+- Melihat daftar kelas yang sedang diikuti
 
-###  Authentication (JWT)
+### Progress
+- Tandai materi atau lesson yang selesai
+- Melihat persentase progres belajar
 
-* Register user
-* Login (generate token)
-* Get & update profile
+### Reports & Async Tasks (Paket 6 Fitur Tambahan)
+- Kirim notifikasi email otomatis lewat background task Celery pas student berhasil enroll kelas
+- Generate laporan statistik kelas format CSV di background (Khusus Admin dan Instructor)
+- Cek status pengerjaan tugas laporan pakai task ID buat liat hasilnya
+- Update otomatis data statistik berkala pakai scheduled task dari Celery Beat
+- Monitoring aktivitas worker Celery secara langsung pakai dashboard visual Flower
 
-###  Courses
-
-* List courses (public)
-* Detail course
-* Create course (Instructor only)
-* Update course (Owner only)
-* Delete course (Admin only)
-
-###  Enrollment
-
-* Enroll ke course (Student only)
-* Melihat course yang diikuti
-
-###  Progress
-
-* Tandai lesson selesai
-* Melihat progress belajar
-
----
-
-##  Cara Menjalankan Project
+## Cara Menjalankan Project
 
 ### 1. Clone Repository
-
-```bash
 git clone https://github.com/Syafunn/simple-lms.git
 cd simple-lms
-```
 
 ### 2. Jalankan Docker
-
-```bash
+Pastikan sudah copy file .env.example menjadi .env sebelum menyalakan service:
+cp .env.example .env
 docker-compose up -d --build
-```
 
 ### 3. Jalankan Migration
-
-```bash
 docker-compose exec web python manage.py migrate
-```
 
-### 4. Akses API
+### 4. Akses API & Layanan
+- Dokumentasi API (Swagger UI): http://localhost:8000/api/docs
+- Dashboard Monitoring Celery (Flower): http://localhost:5555
 
-```text
-http://localhost:8000/api/docs
-```
+## API Documentation (Swagger)
 
----
+Swagger tersedia di /api/docs dan bisa langsung dipakai buat testing semua endpoint yang tersedia.
 
-##  API Documentation (Swagger)
-
-Swagger tersedia di:
-
-```text
-/api/docs
-```
-
-Gunakan untuk testing semua endpoint.
-
----
-
-##  Authentication
-
-Gunakan JWT token:
-
-```text
+### Authentication
+Untuk endpoint yang dikunci, gunakan JWT token pada header dengan format:
 Authorization: Bearer <access_token>
-```
 
----
+## API Endpoints
 
-##  API Endpoints
+### Auth
+- POST /api/auth/register
+- POST /api/auth/login
+- GET /api/auth/me
+- PUT /api/auth/me
 
-###  Auth
+### Courses
+- GET /api/courses
+- GET /api/courses/{id}
+- POST /api/courses
+- PATCH /api/courses/{id}
+- DELETE /api/courses/{id}
 
-* POST /api/auth/register
-* POST /api/auth/login
-* GET /api/auth/me
-* PUT /api/auth/me
+### Enrollment
+- POST /api/enrollments
+- GET /api/enrollments/my-courses
 
----
+### Progress
+- POST /api/enrollments/{id}/progress
+- GET /api/progress
 
-###  Courses
+### Reports & Async Tasks
+- POST /api/reports/generate
+- GET /api/reports/status/{task_id}
 
-* GET /api/courses
-* GET /api/courses/{id}
-* POST /api/courses (Instructor)
-* PATCH /api/courses/{id} (Owner)
-* DELETE /api/courses/{id} (Admin)
+## Role-Based Access Control (RBAC)
 
----
+| Role | Hak Akses Fitur |
+|---|---|
+| Admin | Hapus kelas, kelola penuh sistem, pemicuan semua report |
+| Instructor | Bikin kelas baru, edit kelas milik sendiri, pemicuan report kelas |
+| Student | Daftar kelas (enroll), update progress materi, liat riwayat belajar |
 
-###  Enrollment
+## Database
 
-* POST /api/enrollments (Student)
-* GET /api/enrollments/my-courses
+Menggunakan PostgreSQL sebagai database utama dan Redis sebagai temporary storage (Cache & Celery Backend) yang semuanya berjalan di dalam container Docker.
 
----
+## Tech Stack
 
-###  Progress
+- Django
+- Django Ninja
+- PostgreSQL
+- Docker & Docker Compose
+- Redis
+- RabbitMQ
+- Celery & Celery Beat
+- Flower
+- JWT (python-jose)
+- Pydantic
 
-* POST /api/enrollments/{id}/progress
-* GET /api/progress
+## Screenshots
 
----
+Folder img/ berisi bukti visual pengujian:
+- Swagger API Docs Interface
+- Login & Token Generation
+- Pengecekan RBAC (Success & Failed)
+- Proses Enrollment Student
+- Tracking Progress Belajar
+- Hasil Task Status SUCCESS di Endpoint
+- Live Monitoring di Dashboard Flower
 
-##  Role-Based Access Control (RBAC)
+## Project Structure
 
-| Role       | Akses                  |
-| ---------- | ---------------------- |
-| Admin      | Delete course          |
-| Instructor | Create & update course |
-| Student    | Enroll & progress      |
-
----
-
-##  Database
-
-Menggunakan PostgreSQL dengan Docker container.
-
----
-
-##  Tech Stack
-
-* Django
-* Django Ninja
-* PostgreSQL
-* Docker
-* JWT (python-jose)
-* Pydantic
-
----
-
-##  Screenshots
-
-Berisi:
-
-* Swagger API
-<img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/06c16186-f060-4f30-9fb0-ebf58f16e80a" />
-
-* Login & Token
-  <img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/2722265e-186f-4385-a068-4bfe72e65b3c" />
-
-* Create Course, RBAC (success & failed)
-  <img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/5fbfeefc-7f29-4856-99e5-15e7eb4b634d" />
-  <img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/81b36d65-6259-4b3f-91e3-757682680625" />
-
-* Enrollment
- <img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/59cff465-a777-45bf-a534-d79349163dd1" />
-
-* Progress
-<img width="2560" height="1504" alt="image" src="https://github.com/user-attachments/assets/52d3f9dc-283f-489f-995e-74ca2c2ae834" />
-
-
----
-
-##  Project Structure
-
-```
 simple-lms/
 ├── docker-compose.yml
 ├── requirements.txt
+├── .env.example
 ├── config/
+│   ├── settings.py
+│   ├── urls.py
+│   └── celery.py
 ├── lms/
+│   ├── api.py
+│   ├── models.py
+│   ├── schemas.py
+│   └── tasks.py
 └── README.md
-```
-
----
 
 ## Additional Features
 
 ### Redis Caching
-
-Implementasi Redis caching untuk:
-
+Implementasi Redis caching diterapkan pada:
 - Course List API
 - Course Detail API
 - Weather API Simulation
-
 Cache timeout: 300 seconds (5 minutes)
 
 Kenapa response time berbeda?
--Karena pada pemanggilan pertama aplikasi mengambil data dari API yang memiliki delay 2 detik.
--Pada pemanggilan kedua data sudah tersimpan di Redis sehingga tidak perlu memanggil API lagi.
+- Pada pemanggilan pertama aplikasi mengambil data dari database atau API eksternal yang memiliki delay proses.
+- Pada pemanggilan kedua, data sudah dibungkus dan disimpan di memori Redis, jadi aplikasi tinggal ambil dari sana tanpa perlu request ulang ke database utama.
 
 Apa keuntungan caching?
--Mempercepat response time
--Mengurangi beban server
--Mengurangi jumlah API call
--Meningkatkan performa aplikasi
+- Waktu respon server jadi jauh lebih instan (low latency)
+- Mengurangi beban kerja dan query berulang ke database
+- Server jadi lebih tangguh pas nerima banyak traffic sekaligus
 
 Kapan sebaiknya tidak menggunakan cache?
--Data sering berubah
--Membutuhkan data real-time
--Data sensitif yang tidak boleh disimpan lama
+- Data yang nilainya sangat dinamis dan berubah tiap detik
+- Membutuhkan validasi data real-time (seperti sisa saldo atau stok barang kritis)
+- Data sensitif yang sifatnya rahasia antar user
 
-screenshot:
-Redis terinstall dan jalan	
-<img width="1464" height="662" alt="Screenshot 2026-06-08 142043" src="https://github.com/user-attachments/assets/4c610b40-9730-4d54-beb8-efd0cecd911d" />
+### Asynchronous Background Workers (Celery + RabbitMQ)
+Sistem asinkron ini dipasang untuk memisahkan tugas komputasi berat dari jalur utama API:
+- Pengiriman Email: Proses kirim email notifikasi dipindahkan ke background biar student gak perlu nunggu loading pas klik tombol daftar kelas.
+- Pembuatan Laporan: Proses menyusun file CSV dikerjakan oleh worker Celery. User langsung dapet task ID dalam hitungan milidetik, sementara file aslinya diproses dengan aman di belakang layar.
 
-Caching logic benar	
-<img width="1392" height="172" alt="Screenshot 2026-06-08 134929" src="https://github.com/user-attachments/assets/99a5abfc-a248-4646-bcc1-2d5499d9d0a1" />
+## Kesimpulan
 
-Testing menunjukkan improvement
-<img width="910" height="228" alt="Screenshot 2026-06-08 134752" src="https://github.com/user-attachments/assets/0c3c5cb8-1a4e-4e3c-97f1-3c09bb8eb02d" />
-
-## ✅ Kesimpulan
-
-API LMS berhasil dibangun dengan:
-
-* JWT Authentication
-* Role-Based Access Control
-* Endpoint lengkap sesuai requirement
-* Dokumentasi Swagger
-
-Project siap digunakan dan dikembangkan lebih lanjut.
+API LMS ini berhasil dikembangkan dengan performa tinggi berkat gabungan:
+- JWT Authentication buat keamanan token
+- Role-Based Access Control buat pembatasan hak user
+- Redis Caching buat speed up pembacaan data kelas
+- Celery Workers buat ngeringin tugas-tugas berat di background
+- Dokumen Swagger lengkap yang siap diuji dan dikembangkan lebih lanjut
