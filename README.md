@@ -123,13 +123,34 @@ Menggunakan PostgreSQL sebagai database utama dan Redis sebagai temporary storag
 ## Screenshots
 
 Folder img/ berisi bukti visual pengujian:
-- Swagger API Docs Interface
-- Login & Token Generation
-- Pengecekan RBAC (Success & Failed)
-- Proses Enrollment Student
-- Tracking Progress Belajar
-- Hasil Task Status SUCCESS di Endpoint
-- Live Monitoring di Dashboard Flower
+
+1. Swagger API Docs Interface
+Menampilkan dokumentasi skema endpoint lengkap yang interaktif dan siap pakai.
+![Swagger Docs](img/swagger_docs.png)
+
+2. Pengecekan RBAC (Success)
+Bukti response sukses 200 OK saat endpoint diakses oleh role user yang memiliki hak akses resmi.
+![RBAC Berhasil](img/rbac_berhasil.png)
+
+3. Pengecekan RBAC (Failed)
+Bukti response error atau terblokir saat endpoint coba diakses oleh role yang tidak berwenang.
+![RBAC Gagal](img/rbac_gagal.png)
+
+4. Proses Enrollment Student
+Bukti jalannya proses pendaftaran kelas oleh student yang langsung memicu background task.
+![Student Enroll](img/student_enroll.png)
+
+5. Hasil Task Status SUCCESS di Endpoint
+Response dari endpoint tracker yang menampilkan status SUCCESS beserta lokasi aman file laporan CSV.
+![Status Success](img/status_success.png)
+
+6. Live Monitoring di Dashboard Flower
+Tampilan panel monitoring Flower yang merekam aktivitas worker Celery secara real-time di latar belakang.
+![Flower Monitoring](img/flower.png)
+
+7. Trigger Report Background Task
+Bukti log pemicuan dan eksekusi async task yang berjalan lancar tanpa mengganggu performa API utama.
+![Trigger Report](img/trigger_report.png)
 
 ## Project Structure
 
